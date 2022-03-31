@@ -13,12 +13,15 @@ import io.javalin.Javalin;
 public class CadastroJogador {
 
 	public static void main(String[] args) {
-		Javalin app = Javalin.create();
+		Javalin app = Javalin.create(config -> {
+		    config.enableCorsForAllOrigins();
+		    config.asyncRequestTimeout = 10_000L;
+		    config.enforceSsl = true;
+		});
 		app.start(getHerokuAssignedPort());
-		app.post("/teste", ctx -> {
+		app.post("/jogador", ctx -> {
 			boolean result = addJogador(ctx.queryParam("name"), ctx.queryParam("bday"), ctx.queryParam("email"),
-					ctx.queryParam("phone"), ctx.queryParam("clubs"), ctx.queryParam("videoUrl"),
-					ctx.queryParam("sports"), ctx.queryParam("city"), ctx.queryParam("state"));
+					ctx.queryParam("phone"));
 			if (result) {
 				ctx.status(201);
 			} else {
@@ -30,16 +33,15 @@ public class CadastroJogador {
 
 	}
 
-	public static boolean addJogador(String name, String bday, String email, String phone, String clubs,
-			String videoUrl, String sports, String city, String state) throws SQLException {
-		Dotenv dotenv = Dotenv.load();
+	public static boolean addJogador(String name, String bday, String email, String phone) throws SQLException {
+		
 		Connection conexao = null;
 		PreparedStatement pst = null;
 		String sql = "insert into jogadores(nome, data_nascimento, email, telefone) values (?,?,?,?)";
 		try {
 			Class.forName("org.postgresql.Driver");
-			conexao = DriverManager.getConnection("jdbc:postgresql://" + dotenv.get("HOST") + dotenv.get("DATABASE"),
-					dotenv.get("USER"), dotenv.get("PASSWORD"));
+			conexao = DriverManager.getConnection("jdbc:postgresql://" + System.getenv("HOST") + System.getenv("DATABASE"),
+					System.getenv("USER"), System.getenv("PASSWORD"));
 
 			pst = conexao.prepareStatement(sql);
 			pst.setString(1, name);
